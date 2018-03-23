@@ -23,9 +23,22 @@ def KitePlotting(iDelta, ShowResOnly=False):
                            ZoomIn=True, Grayscale=False, ResOnly=ShowResOnly)
 
 
+def GenerateRectanglesData(iDelta, json):
+    cTree = CoveringTree(5, [8, 12], [8, 12], iDelta)
+    t = timeit.Timer(lambda: cTree.getCovering(maxLevels))
+    exectime = t.timeit(number=1)
+    print('Execution time: {}'.format(exectime))
+    if json:
+        cTree.saveRectData_json("./RectData/rectangle_data_d={}".format(iDelta))
+    else:
+        cTree.saveRectData_csv("./RectData/rectangle_data_d={}".format(iDelta))
+
 maxLevels = 64
 
 
-KitePlotting(0.5, ShowResOnly=False)
+#KitePlotting(0.5, ShowResOnly=False)
 #KitePlotting(0.25, ShowResOnly=False)
 #KitePlotting(0.07, ShowResOnly=False)
+
+GenerateRectanglesData(0.01, json=True)
+GenerateRectanglesData(0.001, json=True)

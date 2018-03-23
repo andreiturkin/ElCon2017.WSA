@@ -46,7 +46,9 @@ class UnityRect:
 
     def jsonObj(self):
         return {
-            "center": self.center,
+            # TODO little mess with tupple again(see TODO below)
+            "centerX": self.center[0],
+            "centerY": self.center[1],
             "width": self.width,
             "height": self.height,
             "inQI": self.inQI,
@@ -333,7 +335,6 @@ class CoveringTree:
                     curLevelNode.add_feature('inQI',inQI)
                     curLevelNode.add_feature('inQE',inQE)
 
-
             # All of the rectangles could be obtained on the next iterations are too small
             # so break it
             if bExit:
@@ -400,9 +401,10 @@ class CoveringTree:
         for leaf in self.__sTree.iter_leaves():
             UnityRects_json.append(UnityRect(leaf.Rect, leaf.inQI, leaf.inQE).jsonObj())
 
-        # Write to file
+        UnityRects_json_packed = {"rects": UnityRects_json}
+
         with open(fileName, "w") as ouf:
-            json.dump(UnityRects_json, ouf, indent=4)
+            json.dump(UnityRects_json_packed, ouf, sort_keys=True)
 
     def saveRectData_csv(self, fileName='./RectData/{0}__{1:02d}_{2:02d}_{3:02d}_rect_data.csv'.format(
                          datetime.date.today(),
@@ -415,7 +417,6 @@ class CoveringTree:
         for leaf in self.__sTree.iter_leaves():
             UnityRects_csv.append(UnityRect(leaf.Rect, leaf.inQI, leaf.inQE).csvObj())
 
-        # Write to file
         with open(fileName, "w") as ouf:
             writer = csv.writer(ouf, delimiter=",")
             writer.writerow(["Center x", "Center y", 'Width', "Height", "inQI", "inQE"])
