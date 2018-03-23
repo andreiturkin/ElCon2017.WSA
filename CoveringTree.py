@@ -2,18 +2,22 @@ from ete3 import Tree
 from math import sqrt
 import numpy as np
 
-#Plotting
+# Plotting
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-#OS
+# OS
 import os
 
 # Date and Time
 import datetime
 
-#Images
+# Images
 from PIL import Image
+
+# File system
+import csv
+import json
 
 
 class Rect:
@@ -26,10 +30,32 @@ class Rect:
         self.height = height
         self.centerx = left + width/2
         self.centery = top + height/2
-        self.center = (left + width/2, top + height/2)
+        self.center = (self.centerx, self.centery)
     
     def __str__(self):
-        return '<Rect: {}, {}, {}, {}>'.format(self.left, self.top, self.width, self.height)  
+        return '<Rect: {}, {}, {}, {}>'.format(self.left, self.top, self.width, self.height)
+
+
+class UnityRect:
+    def __init__(self, rect, inQI, inQE):
+        self.center = rect.center
+        self.width = rect.width
+        self.height = rect.height
+        self.inQI = inQI
+        self.inQE = inQE
+
+    def jsonObj(self):
+        return {
+            "center": self.center,
+            "width": self.width,
+            "height": self.height,
+            "inQI": self.inQI,
+            "inQE": self.inQE
+        }
+
+    def csvObj(self):
+        # TODO little mess with tupple due to CVS writing it as "(val1, val2)", fix later
+        return [self.center[0], self.center[1], self.width, self.height, self.inQI, self.inQE]
 
 
 class CoveringTree:
@@ -201,61 +227,63 @@ class CoveringTree:
     def __initTree(self, Xspace):
         self.__sTree = Tree('0;')  # name here is the level of the tree
         motherNode = self.__sTree.search_nodes(name='0')[0]
-        motherNode.add_feature('Rect',Xspace)
+        motherNode.add_feature('Rect', Xspace)
     
     def __drawRect(self, iRect, fillIt, PlotEdges=True, inQI=False, inQE=True):
         if(PlotEdges):
             # Internal
             if inQI and inQE:
                 edgeColor = 'black'
-                LineStyle='solid'
+                LineStyle = 'solid'
                 LineWidth = 1
-                Alpha=0.3
+                Alpha = 0.3
             # External
             if inQE and (not inQI):
                 edgeColor = 'red'
-                LineStyle='solid'
+                LineStyle = 'solid'
                 LineWidth = 1
-                Alpha=None
+                Alpha = None
             # Out of range
             if (not inQE) and (not inQI):
                 edgeColor = 'green'
-                LineStyle='solid'
+                LineStyle = 'solid'
                 LineWidth = 1
-                Alpha=None
+                Alpha = None
             
             self.__subplot.add_patch(
-                          patches.Rectangle(
-                                            (iRect.left, iRect.top),   # (x,y)
-                                            iRect.width,          # width    
-                                            iRect.height,         # height
-                                            fill=inQI,
-                                            alpha=Alpha,
-                                            linestyle=LineStyle,
-                                            edgecolor=edgeColor,
-                                            lw=LineWidth)
-                          )
+                patches.Rectangle(
+                    (iRect.left, iRect.top),   # (x,y)
+                    iRect.width,          # width
+                    iRect.height,         # height
+                    fill=inQI,
+                    alpha=Alpha,
+                    linestyle=LineStyle,
+                    edgecolor=edgeColor,
+                    lw=LineWidth
+                )
+            )
         else:
+            # TODO tested on different cases - code never reaches this place
             self.__subplot.add_patch(
-                          patches.Rectangle(
-                                            (iRect.left, iRect.top),   # (x,y)
-                                            iRect.width,          # width    
-                                            iRect.height,         # height
-                                            fill=fillIt,
-                                            edgecolor='none')
-                          )
+                patches.Rectangle(
+                    (iRect.left, iRect.top),   # (x,y)
+                    iRect.width,          # width
+                    iRect.height,         # height
+                    fill=fillIt,
+                    edgecolor='none'
+                )
+            )
         plt.draw()
     
     def __AddMarks(self, curLevel, diam):
         self.__tleveltext.set_text('Tree Level = {}'.format(curLevel))
-        self.__curdiam.set_text('d = {}'.format(round(diam,4)))
+        self.__curdiam.set_text('d = {}'.format(round(diam, 4)))
         plt.draw()
 
 ############################################################################################
 # Public Members
 ############################################################################################
     def getCovering(self, maxLevels, log=False):
-        
         cdRect = self.__d(self.__Xspace)
         if log:
             print('The diameter of the initial rectangle is {}\n'.format(cdRect))
@@ -305,10 +333,12 @@ class CoveringTree:
                     curLevelNode.add_feature('inQI',inQI)
                     curLevelNode.add_feature('inQE',inQE)
 
+
             # All of the rectangles could be obtained on the next iterations are too small
             # so break it
             if bExit:
-                print('The result is obtained for {} levels'.format(curLevel))
+                if log:
+                    print('The result is obtained for {} levels'.format(curLevel))
                 break
     
     def getRectsDist(self, R1, R2):
@@ -332,14 +362,14 @@ class CoveringTree:
         for leaf in self.__sTree.iter_leaves():
             if leaf.inQI:
                 cr = leaf.Rect
-                corners = [('left','bottom'), ('right','bottom'), ('left','top'), ('right','top')]
+                corners = [('left', 'bottom'), ('right', 'bottom'), ('left', 'top'), ('right', 'top')]
                 for p in corners:
-                    QI.append((getattr(cr, p[0]),getattr(cr,p[1])));
+                    QI.append((getattr(cr, p[0]), getattr(cr, p[1])))
             if (leaf.inQE) and (not leaf.inQI):
                 cr = leaf.Rect
-                corners = [('left','bottom'), ('right','bottom'), ('left','top'), ('right','top')]
+                corners = [('left', 'bottom'), ('right', 'bottom'), ('left', 'top'), ('right', 'top')]
                 for p in corners:
-                    QJ.append((getattr(cr, p[0]),getattr(cr,p[1])));
+                    QJ.append((getattr(cr, p[0]), getattr(cr, p[1])))
                     
         h_QItoQJ = 0
         QI_maxd_point = (0,0)
@@ -359,7 +389,38 @@ class CoveringTree:
         props = [h_QItoQJ, h_QJtoQI, QI_maxd_point, QJ_maxd_point]
         return max(h_QItoQJ, h_QJtoQI), props
 
-    def saveRects(self):
+    def saveRectData_json(self, fileName='./RectData/{0}__{1:02d}_{2:02d}_{3:02d}_rect_data.json'.format(
+                          datetime.date.today(),
+                          datetime.datetime.now().hour,
+                          datetime.datetime.now().minute,
+                          datetime.datetime.now().second)):
+
+        # Generate Unity-type json`s
+        UnityRects_json = []
+        for leaf in self.__sTree.iter_leaves():
+            UnityRects_json.append(UnityRect(leaf.Rect, leaf.inQI, leaf.inQE).jsonObj())
+
+        # Write to file
+        with open(fileName, "w") as ouf:
+            json.dump(UnityRects_json, ouf, indent=4)
+
+    def saveRectData_csv(self, fileName='./RectData/{0}__{1:02d}_{2:02d}_{3:02d}_rect_data.csv'.format(
+                         datetime.date.today(),
+                         datetime.datetime.now().hour,
+                         datetime.datetime.now().minute,
+                         datetime.datetime.now().second)):
+
+        # Generate Unity-type data
+        UnityRects_csv = []
+        for leaf in self.__sTree.iter_leaves():
+            UnityRects_csv.append(UnityRect(leaf.Rect, leaf.inQI, leaf.inQE).csvObj())
+
+        # Write to file
+        with open(fileName, "w") as ouf:
+            writer = csv.writer(ouf, delimiter=",")
+            writer.writerow(["Center x", "Center y", 'Width', "Height", "inQI", "inQE"])
+            writer.writerows(UnityRects_csv)
+        return
 
     def saveDistance(self, props,
                      fileName='./Images/{0}__{1:02d}_{2:02d}_{3:02d}_covering.jpeg'.format(
@@ -370,18 +431,26 @@ class CoveringTree:
                      ZoomIn = False, Grayscale = False, ResOnly = False):
 
         # Reset plot before drawing
-        self.__subplot.cla()
-        self.__subplot.axis(self.__axis)
+        plt.cla()
+        plt.axis(self.__axis)
 
         if ResOnly:
             for leaf in self.__sTree.iter_leaves():
                 # Draw the rectangle without edges
                 self.__drawRect(leaf.Rect, leaf.Inrange, False, leaf.inQI, leaf.inQE)
             
-            self.__subplot.add_patch(patches.Circle((0, 0), self.__l1_bounds[0], fill=False, lw=1, ls='dashed', color='black'))
-            self.__subplot.add_patch(patches.Circle((0, 0), self.__l1_bounds[1], fill=False, lw=1, ls='dashed', color='black'))
-            self.__subplot.add_patch(patches.Circle((self.__l0, 0), self.__l2_bounds[0], fill=False, lw=1, ls='dashed', color='black'))
-            self.__subplot.add_patch(patches.Circle((self.__l0, 0), self.__l2_bounds[1], fill=False, lw=1, ls='dashed', color='black'))
+            self.__subplot.add_patch(
+                patches.Circle((0, 0), self.__l1_bounds[0], fill=False, lw=1, ls='dashed', color='black')
+            )
+            self.__subplot.add_patch(
+                patches.Circle((0, 0), self.__l1_bounds[1], fill=False, lw=1, ls='dashed', color='black')
+            )
+            self.__subplot.add_patch(
+                patches.Circle((self.__l0, 0), self.__l2_bounds[0], fill=False, lw=1, ls='dashed', color='black')
+            )
+            self.__subplot.add_patch(
+                patches.Circle((self.__l0, 0), self.__l2_bounds[1], fill=False, lw=1, ls='dashed', color='black')
+            )
         else:
             for leaf in self.__sTree.iter_leaves():
                 # Draw the rectangle with edges
