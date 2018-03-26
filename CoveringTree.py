@@ -60,9 +60,9 @@ class CoveringTree:
         #Initialize plotting facilities
         self.__fig = plt.figure()
 		
-		# Plotting axis setup
-					#[self.__Xspace.left-1, self.__Xspace.right+1, self.__Xspace.top-1, self.__Xspace.bottom+1 ]
-		self.__axis = [self.__Xspace.left, self.__Xspace.right, self.__Xspace.top, self.__Xspace.bottom ]
+        #Plotting axis setup
+        #[self.__Xspace.left-1, self.__Xspace.right+1, self.__Xspace.top-1, self.__Xspace.bottom+1 ]
+        self.__axis = [self.__Xspace.left, self.__Xspace.right, self.__Xspace.top, self.__Xspace.bottom ]
 		
         # Plotting facility setup       
         self.__ax = self.__fig.add_subplot(111)
@@ -360,7 +360,8 @@ class CoveringTree:
                                                            datetime.datetime.now().minute,\
                                                            datetime.datetime.now().second),\
                                                            ZoomIn = False, Grayscale = False, ResOnly = False):
-		#Reset subplot axis before drawing
+                                                           
+        #Reset subplot axis before drawing
         plt.cla()
         plt.axis(self.__axis)
 		
