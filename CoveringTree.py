@@ -59,11 +59,15 @@ class CoveringTree:
         
         #Initialize plotting facilities
         self.__fig = plt.figure()
-               
+		
+        #Plotting axis setup
+        #[self.__Xspace.left-1, self.__Xspace.right+1, self.__Xspace.top-1, self.__Xspace.bottom+1 ]
+        self.__axis = [self.__Xspace.left, self.__Xspace.right, self.__Xspace.top, self.__Xspace.bottom ]
+		
+        # Plotting facility setup       
         self.__ax = self.__fig.add_subplot(111)
         self.__ax.axis('scaled')
-        #self.__ax.axis([self.__Xspace.left-1, self.__Xspace.right+1, self.__Xspace.top-1, self.__Xspace.bottom+1 ])
-        self.__ax.axis([self.__Xspace.left, self.__Xspace.right, self.__Xspace.top, self.__Xspace.bottom ])
+        self.__ax.axis(self.__axis)
   
 ############################################################################################
 # Private Members
@@ -356,7 +360,11 @@ class CoveringTree:
                                                            datetime.datetime.now().minute,\
                                                            datetime.datetime.now().second),\
                                                            ZoomIn = False, Grayscale = False, ResOnly = False):
+                                                           
+        #Reset subplot axis before drawing
         plt.cla()
+        plt.axis(self.__axis)
+		
         if ResOnly:
             for leaf in self.__sTree.iter_leaves():
                 #Draw the rectangle without edges
@@ -381,36 +389,39 @@ class CoveringTree:
         if ResOnly:
             return
         
-        h_QItoQJ = props[0] 
-        h_QJtoQI = props[1]
-        QI_maxd_point = props[2]
-        QJ_maxd_point = props[3]
-        
-        if (h_QItoQJ == max(h_QItoQJ, h_QJtoQI)):
-            self.__ax.add_patch(patches.Circle(QI_maxd_point, h_QItoQJ, fill = True, alpha=0.1, lw = 1, color='red'))
-            self.__ax.scatter(QI_maxd_point[0], QI_maxd_point[1], s=4, c='black')
-        else:
-            self.__ax.add_patch(patches.Circle(QJ_maxd_point, h_QJtoQI, fill = True, alpha=0.1, lw = 1, color='red'))
-            self.__ax.scatter(QJ_maxd_point[0], QJ_maxd_point[1], s=4, c='black')        
-        
-        plt.draw()
         if (ZoomIn):
+            # New image file setup
             name, extension = os.path.splitext(fileName)
             name += '_dist_zoomed'
             fileName = name + extension
-            
+
+            # Actual drawing info
+            h_QItoQJ = props[0]
+            h_QJtoQI = props[1]
+            QI_maxd_point = props[2]
+            QJ_maxd_point = props[3]
+
             if (h_QItoQJ == max(h_QItoQJ, h_QJtoQI)):
-                self.__ax.axis([QI_maxd_point[0]-h_QItoQJ, QI_maxd_point[0]+h_QItoQJ, 
-                                QI_maxd_point[1]-h_QItoQJ, QI_maxd_point[1]+h_QItoQJ])
+                self.__subplot.add_patch(
+                    patches.Circle(QI_maxd_point, h_QItoQJ, fill=True, alpha=0.1, lw=1, color='red'))
+                self.__subplot.scatter(QI_maxd_point[0], QI_maxd_point[1], s=4, c='black')
+
+                self.__subplot.axis([QI_maxd_point[0] - h_QItoQJ, QI_maxd_point[0] + h_QItoQJ,
+                                     QI_maxd_point[1] - h_QItoQJ, QI_maxd_point[1] + h_QItoQJ])
             else:
-                self.__ax.axis([QJ_maxd_point[0]-h_QJtoQI, QJ_maxd_point[0]+h_QJtoQI, 
-                                QJ_maxd_point[1]-h_QJtoQI, QJ_maxd_point[1]+h_QJtoQI])
-            
+                self.__subplot.add_patch(
+                    patches.Circle(QJ_maxd_point, h_QJtoQI, fill=True, alpha=0.1, lw=1, color='red'))
+                self.__subplot.scatter(QJ_maxd_point[0], QJ_maxd_point[1], s=4, c='black')
+
+                self.__subplot.axis([QJ_maxd_point[0] - h_QJtoQI, QJ_maxd_point[0] + h_QJtoQI,
+                                     QJ_maxd_point[1] - h_QJtoQI, QJ_maxd_point[1] + h_QJtoQI])
+
+            # Draw
             plt.draw()
-            
+
+            # Save drawn plot
             if (Grayscale):
                 self.__fig.savefig('./Images/temp.png', dpi = 1200)
                 Image.open('./Images/temp.png').convert("L").save(fileName)
             else:
-                self.__fig.savefig(fileName, dpi = 1200)
-                
+                self.__fig.savefig(fileName, dpi=1200)
